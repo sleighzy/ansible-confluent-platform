@@ -1,0 +1,253 @@
+---
+- name: Add Confluent YUM repository
+  yum_repository:
+    name: Confluent.dist
+    description: Confluent repository (dist)
+    file: confluent
+    baseurl: https://packages.confluent.io/rpm/{{ confluent_platform_version }}/$releasever
+    gpgcheck: yes
+    gpgkey: https://packages.confluent.io/rpm/{{ confluent_platform_version }}/archive.key
+    enabled: yes
+  tags:
+    - confluent_install
+
+- name: Add Confluent YUM repository
+  yum_repository:
+    name: Confluent
+    description: Confluent repository
+    file: confluent
+    baseurl: https://packages.confluent.io/rpm/{{ confluent_platform_version }}
+    gpgcheck: yes
+    gpgkey: https://packages.confluent.io/rpm/{{ confluent_platform_version }}/archive.key
+    enabled: yes
+  tags:
+    - confluent_install
+
+- name: Install the Confluent Open Source platform from the Confluent repository
+  yum:
+    name: confluent-platform-oss-2.11
+    state: present
+    update_cache: yes
+  tags:
+    - confluent_install
+
+- name: Create /var/log/zookeeper directory
+  file:
+    path: /var/log/zookeeper
+    state: directory
+  tags:
+    - confluent_zookeeper_install
+
+- name: Create zookeeper data directory
+  file:
+    path: '{{ confluent_zookeeper_data_dir }}'
+    state: directory
+  tags:
+    - confluent_zookeeper_install
+
+- name: Create zookeeper data log directory
+  file:
+    path: '{{ confluent_zookeeper_data_log_dir }}'
+    state: directory
+  tags:
+    - confluent_zookeeper_install
+
+- name: Template configuration file to /etc/kafka/zookeeper.properties
+  template:
+    src: templates/zookeeper.properties.j2
+    dest: /etc/kafka/zookeeper.properties
+  notify:
+    - Restart ZooKeeper service
+  tags:
+    - confluent_zookeeper_config
+
+- name: Template myid file to {{ confluent_zookeeper_data_dir}}/myid
+  template:
+    src: templates/myid.j2
+    dest: '{{ confluent_zookeeper_data_dir}}/myid'
+  notify:
+    - Restart ZooKeeper service
+  tags:
+    - confluent_zookeeper_config
+
+- name: Create /var/log/kafka directory
+  file:
+    path: /var/log/kafka
+    state: directory
+  tags:
+    - confluent_kafka_install
+
+- name: Create directory for Kafka log files
+  file:
+    path: '{{ confluent_kafka_log_dirs }}'
+    state: directory
+  tags:
+    - confluent_kafka_install
+
+- name: Template configuration file to /etc/kafka/server.properties
+  template:
+    src: templates/server.properties.j2
+    dest: /etc/kafka/server.properties
+  notify:
+    - Restart Kafka service
+  tags:
+    - confluent_kafka_config
+    - confluent_kafka_config_server
+
+- name: Template configuration file to /etc/kafka/producer.properties
+  template:
+    src: templates/producer.properties.j2
+    dest: /etc/kafka/producer.properties
+  notify:
+    - Restart Kafka service
+  tags:
+    - confluent_kafka_config
+    - confluent_kafka_config_producer
+
+- name: Template configuration file to /etc/kafka/consumer.properties
+  template:
+    src: templates/consumer.properties.j2
+    dest: /etc/kafka/consumer.properties
+  notify:
+    - Restart Kafka service
+  tags:
+    - confluent_kafka_config
+    - confluent_kafka_config_consumer
+
+- name: Template configuration file to /etc/kafka/connect-distributed.properties
+  template:
+    src: templates/connect-distributed.properties.j2
+    dest: /etc/kafka/connect-distributed.properties
+  tags:
+    - confluent_kafka_config
+    - confluent_kafka_config_connect_distributed
+
+- name: Template configuration file to /etc/kafka/connect-standalone.properties
+  template:
+    src: templates/connect-standalone.properties.j2
+    dest: /etc/kafka/connect-standalone.properties
+  tags:
+    - confluent_kafka_config
+    - confluent_kafka_config_connect_standalone
+
+- name: Template configuration file to /etc/schema-registry/schema-registry.properties
+  template:
+    src: templates/schema-registry.properties.j2
+    dest: /etc/kafka/schema-registry.properties
+  notify:
+    - Restart Schema Registry service
+  tags:
+    - confluent_kafka_config
+    - confluent_kafka_config_schema_registry
+
+- name: Template configuration file to /etc/kafka-rest/kafka-rest.properties
+  template:
+    src: templates/kafka-rest.properties.j2
+    dest: /etc/kafka-rest/kafka-rest.properties
+  notify:
+    - Restart REST Proxy service
+  tags:
+    - confluent_kafka_config
+    - confluent_kafka_config_rest
+
+- name: Template configuration file to /etc/ksql/ksql-server.properties
+  template:
+    src: templates/ksql-server.properties.j2
+    dest: /etc/ksql/ksql-server.properties
+  tags:
+    - confluent_kafka_config
+    - confluent_kafka_config_ksql
+
+# Update user and group on all files and directories
+- name: Set confluent user and group on directories and files
+  file:
+    dest: '{{ item }}'
+    owner: confluent
+    group: confluent
+    recurse: yes
+  with_items:
+    - /etc/kafka
+    - /etc/kafka-rest
+    - /etc/schema-registry
+    - /etc/ksql
+    - /etc/kafka-connect-jdbc
+    - /etc/kafka-connect-hdfs
+    - /etc/camus
+    - /var/lib/kafka
+    - /var/lib/zookeeper
+    - /var/log/kafka
+    - /var/log/zookeeper
+  tags:
+    - confluent_directory_permissions
+
+# Systemd is used for CentOS 7 and above distributions
+- name: Copy ZooKeeper systemd service file
+  copy:
+    src: files/zookeeper.service
+    dest: /usr/lib/systemd/system/zookeeper.service
+  when: ansible_distribution == "CentOS" and ansible_distribution_major_version > '6'
+  tags:
+    - confluent_zookeeper_service
+
+- name: Start the ZooKeeper service
+  systemd:
+    name: zookeeper.service
+    state: started
+    enabled: yes
+    daemon_reload: yes
+  tags:
+    - confluent_zookeeper_service
+
+# Systemd is used for CentOS 7 and above distributions
+- name: Copy Kafka systemd service file to /usr/lib/systemd/system
+  copy:
+    src: files/kafka.service
+    dest: /usr/lib/systemd/system/kafka.service
+  when: ansible_distribution == "CentOS" and ansible_distribution_major_version > '6'
+  tags:
+    - confluent_kafka_service
+
+- name: Install and start the Kafka service
+  systemd:
+    name: kafka.service
+    state: started
+    enabled: yes
+    daemon_reload: yes
+  tags:
+    - confluent_kafka_service
+
+# Systemd is used for CentOS 7 and above distributions
+- name: Copy Schema Registry systemd service file to /usr/lib/systemd/system
+  copy:
+    src: files/schema-registry.service
+    dest: /usr/lib/systemd/system/schema-registry.service
+  when: ansible_distribution == "CentOS" and ansible_distribution_major_version > '6'
+  tags:
+    - confluent_schema_registry_service
+
+- name: Install and start the Schema Registry service
+  systemd:
+    name: schema-registry.service
+    state: started
+    enabled: yes
+    daemon_reload: yes
+  tags:
+    - confluent_schema_registry_service
+
+# Systemd is used for CentOS 7 and above distributions
+- name: Copy REST Proxy systemd service file to /usr/lib/systemd/system
+  copy:
+    src: files/kafka-rest.service
+    dest: /usr/lib/systemd/system/kafka-rest.service
+  when: ansible_distribution == "CentOS" and ansible_distribution_major_version > '6'
+  tags:
+    - confluent_kafka_rest_service
+
+- name: Install and start the REST Proxy service
+  systemd:
+    name: kafka-rest.service
+    state: started
+    enabled: yes
+    daemon_reload: yes
+  tags:
+    - confluent_kafka_rest_service

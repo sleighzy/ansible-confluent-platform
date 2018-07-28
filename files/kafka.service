@@ -1,0 +1,17 @@
+[Unit]
+Description=Confluent Platform Apache Kafka
+Documentation=http://docs.confluent.io
+Requires=network.target zookeeper.service
+After=network.target zookeeper.service
+
+[Service]
+User=confluent
+Group=confluent
+Type=simple
+SuccessExitStatus=143
+ExecStart=/usr/bin/kafka-server-start /etc/kafka/server.properties
+ExecStop=/usr/bin/kafka-server-stop
+
+[Install]
+WantedBy=multi-user.target
+Alias=kafka.service

@@ -1,0 +1,17 @@
+[Unit]
+Description=Confluent Platform Schema Registry
+Documentation=http://docs.confluent.io
+Requires=network.target zookeeper.service
+After=network.target zookeeper.service kafka.service
+
+[Service]
+User=confluent
+Group=confluent
+Type=simple
+SuccessExitStatus=143
+ExecStart=/usr/bin/schema-registry-start /etc/schema-registry/schema-registry.properties
+ExecStop=/usr/bin/schema-registry-stop
+
+[Install]
+WantedBy=multi-user.target
+Alias=schema-registry.service

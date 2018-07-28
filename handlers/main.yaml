@@ -1,0 +1,21 @@
+---
+
+- name: Restart ZooKeeper service
+  service:
+    name: zookeeper.service
+    state: restarted
+
+- name: Restart Kafka service
+  service:
+    name: kafka.service
+    state: restarted
+
+- name: Restart Schema Registry service
+  service:
+    name: schema-registry.service
+    state: restarted
+
+- name: Restart REST Proxy service
+  service:
+    name: kafka-rest.service
+    state: restarted

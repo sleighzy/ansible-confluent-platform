@@ -1,0 +1,31 @@
+---
+
+- name: Create confluent group
+  group:
+    name: confluent
+    state: present
+  tags:
+    - confluent_group
+
+- name: Create confluent user
+  user:
+    name: confluent
+    group: confluent
+    state: present
+  tags:
+    - confluent_user
+
+- name: Allow 'confluent' group to have passwordless sudo and validate file
+  lineinfile:
+    dest: /etc/sudoers
+    state: present
+    regexp: '^%confluent'
+    line: '%confluent ALL=(ALL) NOPASSWD: ALL'
+    validate: 'visudo -cf %s'
+
+- name: Install Java 8 (OpenJDK)
+  yum:
+    name: java-1.8.0-openjdk
+    state: latest
+  tags:
+    - confluent_java_install

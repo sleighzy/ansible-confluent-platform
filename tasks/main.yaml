@@ -1,0 +1,9 @@
+---
+
+# Include tasks for setting up the user, group, and yum repository
+- import_tasks: setup.yaml
+  become: yes
+
+# Include tasks for the installation of the Confluent Platform
+- import_tasks: install.yaml
+  become: yes
