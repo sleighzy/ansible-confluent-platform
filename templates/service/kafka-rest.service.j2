@@ -1,14 +1,15 @@
 [Unit]
 Description=Confluent Platform Apache Kafka REST Proxy
 Documentation=http://docs.confluent.io
-Requires=network.target zookeeper.service
-After=network.target zookeeper.service kafka.service schema-registry.service
+Requires=network.target kafka.service
+After=network.target kafka.service schema-registry.service
 
 [Service]
 User=confluent
 Group=confluent
 Type=simple
 SuccessExitStatus=143
+Environment='LOG_DIR=/var/log/kafka'
 ExecStart=/usr/bin/kafka-rest-start /etc/kafka-rest/kafka-rest.properties
 ExecStop=/usr/bin/kafka-rest-stop
 

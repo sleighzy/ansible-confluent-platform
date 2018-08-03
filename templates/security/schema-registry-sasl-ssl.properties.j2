@@ -1,0 +1,29 @@
+{% if confluent_kafka_ssl_enabled %}
+{% if confluent_kafka_ssl_client_auth == 'required' %}
+kafkastore.ssl.keystore.location={{ confluent_schema_registry_ssl_keystore_location }}
+kafkastore.ssl.keystore.password={{ confluent_schema_registry_ssl_keystore_password }}
+kafkastore.ssl.key.password={{ confluent_schema_registry_ssl_key_password }}
+{% endif %}
+kafkastore.ssl.truststore.location={{ confluent_schema_registry_ssl_truststore_location }}
+kafkastore.ssl.truststore.password={{ confluent_schema_registry_ssl_truststore_password }}
+kafkastore.ssl.enabled.protocols=TLSv1.2
+kafkastore.ssl.cipher.suites=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_128_GCM_SHA256
+{% endif %}
+
+{% if confluent_kafka_sasl_enabled %}
+kafkastore.sasl.mechanism={{ confluent_schema_registry_sasl_mechanism }}
+
+{% if confluent_schema_registry_sasl_mechanism == 'SCRAM-SHA-256' %}
+kafkastore.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required \
+  username="{{ confluent_schema_registry_sasl_username }}" \
+  password="{{ confluent_schema_registry_sasl_password }}";
+{% elif confluent_schema_registry_sasl_mechanism == 'GSSAPI' %}
+sasl.kerberos.service.name=kafka
+sasl.jaas.config=com.sun.security.auth.module.Krb5LoginModule required \
+  useKeyTab=true \
+  storeKey=true \
+  keyTab="/etc/security/keytabs/schema-registry.keytab" \
+  principal="schema-registry@{{ confluent_kafka_sasl_kerberos_realm }}";
+{% endif %}
+
+{% endif %}

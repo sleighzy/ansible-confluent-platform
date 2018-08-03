@@ -1,5 +1,32 @@
 confluent_platform_version: 4.1
 
+######### ZooKeeper Properties (/etc/kafka/zookeeper.properties) ########
+
+# The directory where the snapshot is stored.
+confluent_zookeeper_data_dir: '/var/lib/zookeeper'
+
+# Directory to write the transaction log to the dataLogDir rather than the dataDir
+# This allows a dedicated log device to be used, and helps avoid competition
+confluent_zookeeper_data_log_dir: '/var/lib/zookeeper'
+
+# The port at which the clients will connect
+confluent_zookeeper_client_port: 2181
+
+# Disable the per-ip limit on the number of connections since this is a non-production config
+confluent_zookeeper_max_client_cnxns: 60
+
+# Uniquely identifies the ZooKeeper instance when clustering ZooKeeper nodes.
+# This value is placed in the /var/lib/zookeeper/myid file.
+confluent_zookeeper_id: 1
+
+confluent_zookeeper_leader_port: 2888
+confluent_zookeeper_election_port: 3888
+
+confluent_zookeeper_use_sasl_authentication: true
+# DIGEST-MD5, GSSAPI (Kerberos)
+confluent_zookeeper_sasl_mechanism: DIGEST-MD5
+
+
 ######### Kafka Properties (/etc/kafka/server.properties) ########
 
 ############################# Server #############################
@@ -14,17 +41,13 @@ confluent_kafka_broker_id: 0
 #   EXAMPLE:
 #     listeners = PLAINTEXT://your.host.name:9092
 #listeners=PLAINTEXT://:9092
-confluent_kafka_listener_protocol: PLAINTEXT
-confluent_kafka_listener_hostname: ''
-confluent_kafka_listener_port: 9092
+confluent_kafka_listeners: SASL_SSL://:9092
 
 # Hostname and port the broker will advertise to producers and consumers. If not set,
 # it uses the value for "listeners" if configured.  Otherwise, it will use the value
 # returned from java.net.InetAddress.getCanonicalHostName().
 #advertised.listeners=PLAINTEXT://your.host.name:9092
-confluent_kafka_advertised_listener_protocol: PLAINTEXT
-confluent_kafka_advertised_listener_hostname: '{{ inventory_hostname }}'
-confluent_kafka_advertised_listener_port: 9092
+confluent_kafka_advertised_listeners: SASL_SSL://{{ inventory_hostname }}:9092
 
 # Enable auto creation of topic on the server
 confluent_kafka_auto_create_topics_enable: false
@@ -38,6 +61,30 @@ confluent_kafka_num_network_threads: 3
 
 # The number of threads doing disk I/O
 confluent_kafka_num_io_threads: 8
+
+############################# Security ###############################
+
+confluent_kafka_security_protocol: SASL_SSL
+confluent_kafka_security_inter_broker_protocol: SASL_SSL
+
+confluent_kafka_ssl_enabled: true
+confluent_kafka_ssl_keystore_location: /var/ssl/private/kafka.server.keystore.jks
+confluent_kafka_ssl_keystore_password: test1234
+confluent_kafka_ssl_key_password: test1234
+confluent_kafka_ssl_truststore_location: /var/ssl/certs/kafka.server.truststore.jks
+confluent_kafka_ssl_truststore_password: test1234
+confluent_kafka_ssl_client_auth: required
+
+confluent_kafka_sasl_enabled: true
+confluent_kafka_sasl_enabled_mechanisms: SCRAM-SHA-256
+confluent_kafka_sasl_mechanism_inter_broker_protocol: SCRAM-SHA-256
+confluent_kafka_sasl_super_users: User:broker;User:connect;User:restproxy;User:schemaregistry;User:ksql
+confluent_kafka_sasl_kerberos_realm: COMPUTE.INTERNAL
+
+confluent_kafka_broker_sasl_username: broker
+confluent_kafka_broker_sasl_password: broker-secret
+
+confluent_kafka_zookeeper_set_acl: false
 
 ############################# Log Basics #############################
 
@@ -83,28 +130,39 @@ confluent_kafka_log_retention_check_interval_ms: 300000
 # server. e.g. "127.0.0.1:3000,127.0.0.1:3001,127.0.0.1:3002".
 # You can also append an optional chroot string to the urls to specify the
 # root directory for all kafka znodes.
-confluent_kafka_zookeeper_connect: 'localhost:2181'
+confluent_kafka_zookeeper_connect_chroot: /kafka
+confluent_kafka_zookeeper_connect: 'localhost:2181{{ confluent_kafka_zookeeper_connect_chroot }}'
 
 # Timeout in ms for connecting to zookeeper
 confluent_kafka_zookeeper_connection_timeout: 6000
 
 
-############################# Producer #############################
-
-# list of brokers used for bootstrapping knowledge about the rest of the cluster
-# format: host1:port1,host2:port2 ...
-confluent_kafka_bootstrap_servers: 'localhost:9092'
-
-
 ##################### Confluent Proactive Support ######################
-
 confluent_support_metrics_enable: false
 confluent_support_customer_id: anonymous
+
+
+# Bootstrap servers to be used in default configuration files for Connect, Schema Registry, and REST Proxy
+confluent_kafka_bootstrap_servers: localhost:9092
 
 
 #################### Connect Distributed ################################
 # unique name for the cluster, used in forming the Connect cluster group. Note that this must not conflict with consumer group IDs
 confluent_connect_group_id: connect-cluster
+confluent_connect_security_protocol: SASL_SSL
+
+confluent_connect_ssl_keystore_location: /var/ssl/private/kafka.client.keystore.jks
+confluent_connect_ssl_keystore_password: test1234
+confluent_connect_ssl_key_password: test1234
+confluent_connect_ssl_truststore_location: /var/ssl/certs/kafka.client.truststore.jks
+confluent_connect_ssl_truststore_password: test1234
+
+confluent_connect_sasl_mechanism: SCRAM-SHA-256
+confluent_connect_sasl_username: connect
+confluent_connect_sasl_password: connect-secret
+
+confluent_connect_producer_security_protocol: SASL_SSL
+confluent_connect_consumer_security_protocol: SASL_SSL
 
 confluent_connect_key_converter: org.apache.kafka.connect.json.JsonConverter
 confluent_connect_value_converter: org.apache.kafka.connect.json.JsonConverter
@@ -131,48 +189,91 @@ confluent_connect_offset_flush_interval_ms: 10000
 
 confluent_connect_plugin_path: share/java
 
-################### Connect Standalone ################################
 
+################### Connect Standalone ######################
 confluent_connect_offset_storage_file_filename: /var/lib/kafka/connect.offsets
-
-
-######### ZooKeeper Properties (/etc/kafka/zookeeper.properties) ########
-
-# The directory where the snapshot is stored.
-confluent_zookeeper_data_dir: '/var/lib/zookeeper'
-
-# Directory to write the transaction log to the dataLogDir rather than the dataDir
-# This allows a dedicated log device to be used, and helps avoid competition
-confluent_zookeeper_data_log_dir: '/var/lib/zookeeper'
-
-# The port at which the clients will connect
-confluent_zookeeper_client_port: 2181
-
-# Disable the per-ip limit on the number of connections since this is a non-production config
-confluent_zookeeper_max_client_cnxns: 60
-
-# Uniquely identifies the ZooKeeper instance when clustering ZooKeeper nodes.
-# This value is placed in the /var/lib/zookeeper/myid file.
-confluent_zookeeper_id: 1
-
-confluent_zookeeper_leader_port: 2888
-confluent_zookeeper_election_port: 3888
 
 
 ################ Schema Registry ############################
 
-confluent_schema_registry_listener: PLAINTEXT://{{ inventory_hostname }}:9092
-confluent_schema_registry_kafkastore_topic: _schemas
+confluent_schema_registry_listener: http://0.0.0.0:8081
+confluent_schema_registry_bootstrap_servers: SASL_SSL://localhost:9092
+confluent_schema_registry_security_protocol: SASL_SSL
+
+confluent_schema_registry_ssl_keystore_location: /var/ssl/private/kafka.client.keystore.jks
+confluent_schema_registry_ssl_keystore_password: test1234
+confluent_schema_registry_ssl_key_password: test1234
+
+confluent_schema_registry_ssl_truststore_location: /var/ssl/certs/kafka.client.truststore.jks
+confluent_schema_registry_ssl_truststore_password: test1234
+
+confluent_schema_registry_sasl_mechanism: SCRAM-SHA-256
+confluent_schema_registry_sasl_username: schemaregistry
+confluent_schema_registry_sasl_password: schemaregistry-secret
+
 confluent_schema_registry_debug: false
 
 
 ################# REST Proxy ################################
 
 confluent_rest_id: 1
+confluent_rest_listeners: http://0.0.0.0:8082
+confluent_rest_schema_registry_url: http://localhost:8081
+confluent_rest_security_protocol: SASL_SSL
+
+confluent_rest_ssl_keystore_location: /var/ssl/private/kafka.client.keystore.jks
+confluent_rest_ssl_keystore_password: test1234
+confluent_rest_ssl_key_password: test1234
+confluent_rest_ssl_truststore_location: /var/ssl/certs/kafka.client.truststore.jks
+confluent_rest_ssl_truststore_password: test1234
+
+confluent_rest_sasl_mechanism: SCRAM-SHA-256
+confluent_rest_sasl_username: restproxy
+confluent_rest_sasl_password: restproxy-secret
 
 
 ################# KSQL ######################################
 
-confluent_ksql_bootstrap_servers: localhost:9092
-confluent_ksql_listeners: http://localhost:8088
-confluent_ksql_server_ui_enabled: true
+confluent_ksql_listeners: http://0.0.0.0:8088
+confluent_ksql_schema_registry_url: http://localhost:8081
+confluent_ksql_security_protocol: SASL_SSL
+
+confluent_ksql_ssl_keystore_location: /var/ssl/private/kafka.client.keystore.jks
+confluent_ksql_ssl_keystore_password: test1234
+confluent_ksql_ssl_key_password: test1234
+confluent_ksql_ssl_truststore_location: /var/ssl/certs/kafka.client.truststore.jks
+confluent_ksql_ssl_truststore_password: test1234
+
+confluent_ksql_sasl_mechanism: SCRAM-SHA-256
+confluent_ksql_sasl_username: ksql
+confluent_ksql_sasl_password: ksql-secret
+
+
+################# Console Producer ##########################
+
+confluent_secure_producer_security_protocol: SASL_SSL
+
+confluent_secure_producer_ssl_keystore_location: /var/ssl/private/kafka.client.keystore.jks
+confluent_secure_producer_ssl_keystore_password: test1234
+confluent_secure_producer_ssl_key_password: test1234
+confluent_secure_producer_ssl_truststore_location: /var/ssl/certs/kafka.client.truststore.jks
+confluent_secure_producer_ssl_truststore_password: test1234
+
+confluent_secure_producer_sasl_mechanism: SCRAM-SHA-256
+confluent_secure_producer_sasl_username: console-producer
+confluent_secure_producer_sasl_password: console-producer-secret
+
+
+################# Console Consumer ##########################
+
+confluent_secure_consumer_security_protocol: SASL_SSL
+
+confluent_secure_consumer_ssl_keystore_location: /var/ssl/private/kafka.client.keystore.jks
+confluent_secure_consumer_ssl_keystore_password: test1234
+confluent_secure_consumer_ssl_key_password: test1234
+confluent_secure_consumer_ssl_truststore_location: /var/ssl/certs/kafka.client.truststore.jks
+confluent_secure_consumer_ssl_truststore_password: test1234
+
+confluent_secure_consumer_sasl_mechanism: SCRAM-SHA-256
+confluent_secure_consumer_sasl_username: console-consumer
+confluent_secure_consumer_sasl_password: console-consumer-secret

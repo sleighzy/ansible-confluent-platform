@@ -1,0 +1,84 @@
+---
+- name: Create Broker authentication credentials in ZooKeeper
+  command: >
+    kafka-configs --zookeeper localhost:2181{{ confluent_kafka_zookeeper_connect_chroot }} --alter \
+    --add-config 'SCRAM-SHA-256=[password={{ confluent_kafka_broker_sasl_password }}],SCRAM-SHA-512=[password={{ confluent_kafka_broker_sasl_password }}]' \
+    --entity-type users \
+    --entity-name {{ confluent_kafka_broker_sasl_username }}
+  register: command_result
+  failed_when:
+    - '"Completed Updating config for entity: user-principal ''" ~ confluent_kafka_broker_sasl_username ~ "''." not in command_result.stdout'
+  tags:
+    - confluent_sasl_broker_credentials
+
+- name: Create Kafka Connect authentication credentials in ZooKeeper
+  command: >
+    kafka-configs --zookeeper localhost:2181{{ confluent_kafka_zookeeper_connect_chroot }} --alter \
+    --add-config 'SCRAM-SHA-256=[password={{ confluent_connect_sasl_password }}],SCRAM-SHA-512=[password={{ confluent_connect_sasl_password }}]' \
+    --entity-type users \
+    --entity-name {{ confluent_connect_sasl_username }}
+  register: command_result
+  failed_when:
+    - '"Completed Updating config for entity: user-principal ''" ~ confluent_connect_sasl_username ~ "''." not in command_result.stdout'
+  tags:
+    - confluent_sasl_connect_credentials
+
+- name: Create Schema Registry authentication credentials in ZooKeeper
+  command: >
+    kafka-configs --zookeeper localhost:2181{{ confluent_kafka_zookeeper_connect_chroot }} --alter \
+    --add-config 'SCRAM-SHA-256=[password={{ confluent_schema_registry_sasl_password }}],SCRAM-SHA-512=[password={{ confluent_schema_registry_sasl_password }}]' \
+    --entity-type users \
+    --entity-name {{ confluent_schema_registry_sasl_username }}
+  register: command_result
+  failed_when:
+    - '"Completed Updating config for entity: user-principal ''" ~ confluent_schema_registry_sasl_username ~ "''." not in command_result.stdout'
+  tags:
+    - confluent_sasl_schema_registry_credentials
+
+- name: Create REST Proxy authentication credentials in ZooKeeper
+  command: >
+    kafka-configs --zookeeper localhost:2181{{ confluent_kafka_zookeeper_connect_chroot }} --alter \
+    --add-config 'SCRAM-SHA-256=[password={{ confluent_rest_sasl_password }}],SCRAM-SHA-512=[password={{ confluent_rest_sasl_password }}]' \
+    --entity-type users \
+    --entity-name {{ confluent_rest_sasl_username }}
+  register: command_result
+  failed_when:
+    - '"Completed Updating config for entity: user-principal ''" ~ confluent_rest_sasl_username ~ "''." not in command_result.stdout'
+  tags:
+    - confluent_sasl_rest_proxy_credentials
+
+- name: Create KSQL authentication credentials in ZooKeeper
+  command: >
+    kafka-configs --zookeeper localhost:2181{{ confluent_kafka_zookeeper_connect_chroot }} --alter \
+    --add-config 'SCRAM-SHA-256=[password={{ confluent_ksql_sasl_password }}],SCRAM-SHA-512=[password={{ confluent_ksql_sasl_password }}]' \
+    --entity-type users \
+    --entity-name {{ confluent_ksql_sasl_username }}
+  register: command_result
+  failed_when:
+    - '"Completed Updating config for entity: user-principal ''" ~ confluent_ksql_sasl_username ~ "''." not in command_result.stdout'
+  tags:
+    - confluent_sasl_ksql_credentials
+
+- name: Create secure console producer authentication credentials in ZooKeeper
+  command: >
+    kafka-configs --zookeeper localhost:2181{{ confluent_kafka_zookeeper_connect_chroot }} --alter \
+    --add-config 'SCRAM-SHA-256=[password={{ confluent_secure_producer_sasl_password }}],SCRAM-SHA-512=[password={{ confluent_secure_producer_sasl_password }}]' \
+    --entity-type users \
+    --entity-name {{ confluent_secure_producer_sasl_username }}
+  register: command_result
+  failed_when:
+    - '"Completed Updating config for entity: user-principal ''" ~ confluent_secure_producer_sasl_username ~ "''." not in command_result.stdout'
+  tags:
+    - confluent_sasl_secure_producer_credentials
+
+- name: Create secure console consumer authentication credentials in ZooKeeper
+  command: >
+    kafka-configs --zookeeper localhost:2181{{ confluent_kafka_zookeeper_connect_chroot }} --alter \
+    --add-config 'SCRAM-SHA-256=[password={{ confluent_secure_consumer_sasl_password }}],SCRAM-SHA-512=[password={{ confluent_secure_consumer_sasl_password }}]' \
+    --entity-type users \
+    --entity-name {{ confluent_secure_consumer_sasl_username }}
+  register: command_result
+  failed_when:
+    - '"Completed Updating config for entity: user-principal ''" ~ confluent_secure_consumer_sasl_username ~ "''." not in command_result.stdout'
+  tags:
+    - confluent_sasl_secure_consumer_credentials

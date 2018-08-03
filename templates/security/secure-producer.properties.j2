@@ -1,0 +1,79 @@
+# {{ ansible_managed }}
+
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# see kafka.producer.ProducerConfig for more details
+
+############################# Producer Basics #############################
+
+# list of brokers used for bootstrapping knowledge about the rest of the cluster
+# format: host1:port1,host2:port2 ...
+bootstrap.servers={{ confluent_kafka_bootstrap_servers }}
+
+security.protocol={{ confluent_secure_producer_security_protocol }}
+
+{% if confluent_kafka_ssl_enabled %}
+############################# SSL Security ##########################
+{% if confluent_kafka_ssl_client_auth == 'required' %}
+ssl.keystore.location={{ confluent_secure_producer_ssl_keystore_location }}
+ssl.keystore.password={{ confluent_secure_producer_ssl_keystore_password }}
+ssl.key.password={{ confluent_secure_producer_ssl_key_password }}
+{% endif %}
+ssl.truststore.location={{ confluent_secure_producer_ssl_truststore_location }}
+ssl.truststore.password={{ confluent_secure_producer_ssl_truststore_password }}
+{% endif %}
+
+{% if confluent_kafka_sasl_enabled %}
+############################# SASL Security #########################
+sasl.mechanism={{ confluent_secure_producer_sasl_mechanism }}
+
+{% if confluent_secure_producer_sasl_mechanism == 'SCRAM-SHA-256' %}
+sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required \
+  username="{{ confluent_secure_producer_sasl_username }}" \
+  password="{{ confluent_secure_producer_sasl_password }}";
+{% elif confluent_secure_producer_sasl_mechanism == 'GSSAPI' %}
+sasl.kerberos.service.name=kafka
+sasl.jaas.config=com.sun.security.auth.module.Krb5LoginModule required \
+  useKeyTab=true \
+  storeKey=true \
+  keyTab="/etc/security/keytabs/kafka-console-producer.keytab" \
+  principal="kafka-console-producer@{{ confluent_kafka_sasl_kerberos_realm }}";
+{% endif %}
+
+{% endif %}
+
+# specify the compression codec for all data generated: none, gzip, snappy, lz4
+compression.type=none
+
+# name of the partitioner class for partitioning events; default partition spreads data randomly
+#partitioner.class=
+
+# the maximum amount of time the client will wait for the response of a request
+#request.timeout.ms=
+
+# how long `KafkaProducer.send` and `KafkaProducer.partitionsFor` will block for
+#max.block.ms=
+
+# the producer will wait for up to the given delay to allow other records to be sent so that the sends can be batched together
+#linger.ms=
+
+# the maximum size of a request in bytes
+#max.request.size=
+
+# the default batch size in bytes when batching multiple records sent to a partition
+#batch.size=
+
+# the total bytes of memory the producer can use to buffer records waiting to be sent to the server
+#buffer.memory=

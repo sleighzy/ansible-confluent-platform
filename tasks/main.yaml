@@ -1,6 +1,6 @@
 ---
 
-# Include tasks for setting up the user, group, and yum repository
+# Include tasks for setting up the user and group
 - import_tasks: setup.yaml
   become: yes
 

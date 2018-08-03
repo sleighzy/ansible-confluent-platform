@@ -1,0 +1,18 @@
+[Unit]
+Description=Confluent Platform KSQL
+Documentation=http://docs.confluent.io
+Requires=network.target kafka.service
+After=network.target kafka.service
+
+[Service]
+User=confluent
+Group=confluent
+Type=simple
+SuccessExitStatus=143
+Environment='LOG_DIR=/var/log/kafka'
+ExecStart=/usr/bin/ksql-server-start /etc/ksql/ksql-server.properties
+ExecStop=/usr/bin/ksql-server-stop
+
+[Install]
+WantedBy=multi-user.target
+Alias=ksql.service

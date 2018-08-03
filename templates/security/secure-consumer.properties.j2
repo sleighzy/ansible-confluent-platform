@@ -1,0 +1,60 @@
+# {{ ansible_managed }}
+
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# see org.apache.kafka.clients.consumer.ConsumerConfig for more details
+
+# list of brokers used for bootstrapping knowledge about the rest of the cluster
+# format: host1:port1,host2:port2 ...
+bootstrap.servers={{ confluent_kafka_bootstrap_servers }}
+
+# consumer group id
+group.id=secure-kafka-consumer-group
+
+# What to do when there is no initial offset in Kafka or if the current
+# offset does not exist any more on the server: latest, earliest, none
+#auto.offset.reset=
+
+security.protocol={{ confluent_secure_consumer_security_protocol }}
+
+{% if confluent_kafka_ssl_enabled %}
+############################# SSL Security ##########################
+{%if confluent_kafka_ssl_client_auth == 'required' %}
+ssl.keystore.location={{ confluent_secure_consumer_ssl_keystore_location }}
+ssl.keystore.password={{ confluent_secure_consumer_ssl_keystore_password }}
+ssl.key.password={{ confluent_secure_consumer_ssl_key_password }}
+{% endif %}
+ssl.truststore.location={{ confluent_secure_consumer_ssl_truststore_location }}
+ssl.truststore.password={{ confluent_secure_consumer_ssl_truststore_password }}
+{% endif %}
+
+{% if confluent_kafka_sasl_enabled %}
+############################# SASL Security #########################
+sasl.mechanism={{ confluent_secure_consumer_sasl_mechanism }}
+
+{% if confluent_secure_consumer_sasl_mechanism == 'SCRAM-SHA-256' %}
+sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required \
+  username="{{ confluent_secure_consumer_sasl_username }}" \
+  password="{{ confluent_secure_consumer_sasl_password }}";
+{% elif confluent_secure_consumer_sasl_mechanism == 'GSSAPI' %}
+sasl.kerberos.service.name=kafka
+sasl.jaas.config=com.sun.security.auth.module.Krb5LoginModule required \
+  useKeyTab=true \
+  storeKey=true \
+  keyTab="/etc/security/keytabs/kafka-console-consumer.keytab" \
+  principal="kafka-console-consumer@{{ confluent_kafka_sasl_kerberos_realm }}";
+{% endif %}
+
+{% endif %}

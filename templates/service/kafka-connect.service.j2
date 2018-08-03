@@ -1,0 +1,16 @@
+[Unit]
+Description=Confluent Platform Kafka Connect
+Documentation=http://docs.confluent.io
+Requires=network.target kafka.service
+After=network.target kafka.service
+
+[Service]
+User=confluent
+Group=confluent
+Type=simple
+SuccessExitStatus=143
+ExecStart=/usr/bin/connect-distributed /etc/kafka/connect-distributed.properties
+
+[Install]
+WantedBy=multi-user.target
+Alias=kafka-connect.service

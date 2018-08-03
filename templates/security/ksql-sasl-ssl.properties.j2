@@ -1,0 +1,25 @@
+{% if confluent_kafka_ssl_enabled %}
+{% if confluent_kafka_ssl_client_auth == 'required' %}
+ssl.keystore.location={{ confluent_ksql_ssl_keystore_location }}
+ssl.keystore.password={{ confluent_ksql_ssl_keystore_password }}
+ssl.key.password={{ confluent_ksql_ssl_key_password }}
+{% endif %}
+ssl.truststore.location={{ confluent_ksql_ssl_truststore_location }}
+ssl.truststore.password={{ confluent_ksql_ssl_truststore_password }}
+{% endif %}
+
+{% if confluent_kafka_sasl_enabled %}
+sasl.mechanism={{ confluent_ksql_sasl_mechanism }}
+{% if confluent_ksql_sasl_mechanism == 'SCRAM-SHA-256' %}
+sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required \
+  username="{{ confluent_ksql_sasl_username }}" \
+  password="{{ confluent_ksql_sasl_password }}";
+{% elif confluent_ksql_sasl_mechanism == 'GSSAPI' %}
+sasl.kerberos.service.name=kafka
+sasl.jaas.config=com.sun.security.auth.module.Krb5LoginModule required \
+  useKeyTab=true \
+  storeKey=true \
+  keyTab="/etc/security/keytabs/kafka-ksql.keytab" \
+  principal="kafka-ksql@{{ confluent_kafka_sasl_kerberos_realm }}";
+{% endif %}
+{% endif %}

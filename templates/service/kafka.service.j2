@@ -9,6 +9,9 @@ User=confluent
 Group=confluent
 Type=simple
 SuccessExitStatus=143
+{% if confluent_zookeeper_use_sasl_authentication %}
+Environment='KAFKA_OPTS=-Djava.security.auth.login.config=/etc/kafka/kafka-server-jaas.conf'
+{% endif %}
 ExecStart=/usr/bin/kafka-server-start /etc/kafka/server.properties
 ExecStop=/usr/bin/kafka-server-stop
 

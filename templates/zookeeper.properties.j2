@@ -49,6 +49,10 @@ clientPort={{ confluent_zookeeper_client_port }}
 # Set to "0" to disable auto purge feature
 #autopurge.purgeInterval=1
 
+{% if confluent_zookeeper_use_sasl_authentication %}
+{% include "templates/security/zookeeper-sasl.properties.j2" %}
+{% endif %}
+
 # List of clustered ZooKeeper nodes.
 # Port 2888 is the default quorum port and 3888 is the default
 # leader election port. These must be unique per server.

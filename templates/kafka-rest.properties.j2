@@ -16,10 +16,18 @@
 # limitations under the License.
 ##
 
+listeners={{ confluent_rest_listeners }}
 id=kafka-rest-server-{{ confluent_rest_id }}
-#schema.registry.url=http://localhost:8081
-#zookeeper.connect=localhost:2181
-bootstrap.servers=PLAINTEXT://localhost:9092
+#schema.registry.url={{ confluent_rest_schema_registry_url }}
+#zookeeper.connect={{ confluent_kafka_zookeeper_connect }}
+bootstrap.servers={{ confluent_kafka_bootstrap_servers }}
+
+client.security.protocol={{ confluent_rest_security_protocol }}
+
+{% if confluent_kafka_ssl_enabled or confluent_kafka_sasl_enabled %}
+{% include "templates/security/kafka-rest-sasl-ssl.properties.j2" %}
+{% endif %}
+
 #
 # Configure interceptor classes for sending consumer and producer metrics to Confluent Control Center
 # Make sure that monitoring-interceptors-<version>.jar is on the Java class path

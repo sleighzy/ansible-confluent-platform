@@ -1,0 +1,35 @@
+{% if confluent_kafka_ssl_enabled %}
+############################# SSL Security ##########################
+ssl.keystore.location={{ confluent_kafka_ssl_keystore_location }}
+ssl.keystore.password={{ confluent_kafka_ssl_keystore_password }}
+ssl.key.password={{ confluent_kafka_ssl_key_password }}
+ssl.truststore.location={{ confluent_kafka_ssl_truststore_location }}
+ssl.truststore.password={{ confluent_kafka_ssl_truststore_password }}
+ssl.client.auth={{ confluent_kafka_ssl_client_auth }}
+ssl.enabled.protocols=TLSv1.2
+ssl.cipher.suites=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_128_GCM_SHA256
+{% endif %}
+
+{% if confluent_kafka_sasl_enabled %}
+############################# SASL Security ##########################
+# List of enabled mechanisms, can be more than one
+sasl.enabled.mechanisms={{ confluent_kafka_sasl_enabled_mechanisms }}
+
+# Specify one of of the SASL mechanisms
+sasl.mechanism.inter.broker.protocol={{ confluent_kafka_sasl_mechanism_inter_broker_protocol }}
+
+# ACLs
+authorizer.class.name=kafka.security.auth.SimpleAclAuthorizer
+super.users={{ confluent_kafka_sasl_super_users }}
+{% endif %}
+
+{% if confluent_zookeeper_use_sasl_authentication %}
+#################### ZooKeeper SASL Security ########################
+zookeeper.set.acl={{ confluent_kafka_zookeeper_set_acl }}
+
+{% if confluent_zookeeper_sasl_mechanism == 'GSSAPI' %}
+# If you are using GSSAPI, configure a service name that matches the primary name of the Brokers configured in the Broker JAAS file.
+# In earlier JAAS file examples, with principal="kafka/kafka1.hostname.com@EXAMPLE.COM";, the primary is "kafka"
+sasl.kerberos.service.name=kafka
+{% endif %}
+{% endif %}

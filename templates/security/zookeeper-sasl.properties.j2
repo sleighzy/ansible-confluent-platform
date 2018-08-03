@@ -1,0 +1,14 @@
+{% if confluent_zookeeper_use_sasl_authentication %}
+authProvider.1=org.apache.zookeeper.server.auth.SASLAuthenticationProvider
+requireClientAuthScheme=sasl
+{% endif %}
+
+{% if confluent_zookeeper_sasl_mechanism == 'GSSAPI' %}
+quorum.auth.enableSasl=true
+quorum.auth.learnerRequireSasl=true
+quorum.auth.serverRequireSasl=true
+quorum.auth.learner.loginContext=QuorumLearner
+quorum.auth.server.loginContext=QuorumServer
+quorum.auth.kerberos.servicePrincipal=zookeeper/_HOST
+quorum.cnxn.threads.size=20
+{% endif %}

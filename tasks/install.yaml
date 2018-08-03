@@ -61,6 +61,16 @@
   tags:
     - confluent_zookeeper_config
 
+- name: Template configuration file to /etc/kafka/zoo-server-jaas.conf
+  template:
+    src: templates/security/zoo-server-jaas.conf.j2
+    dest: /etc/kafka/zoo-server-jaas.conf
+  notify:
+    - Restart ZooKeeper service
+  tags:
+    - confluent_zookeeper_config
+    - confluent_zookeeper_config_jaas
+
 - name: Template myid file to {{ confluent_zookeeper_data_dir}}/myid
   template:
     src: templates/myid.j2
@@ -94,30 +104,22 @@
     - confluent_kafka_config
     - confluent_kafka_config_server
 
-- name: Template configuration file to /etc/kafka/producer.properties
+- name: Template configuration file to /etc/kafka/kafka-server-jaas.conf
   template:
-    src: templates/producer.properties.j2
-    dest: /etc/kafka/producer.properties
+    src: templates/security/kafka-server-jaas.conf.j2
+    dest: /etc/kafka/kafka-server-jaas.conf
   notify:
     - Restart Kafka service
   tags:
     - confluent_kafka_config
-    - confluent_kafka_config_producer
-
-- name: Template configuration file to /etc/kafka/consumer.properties
-  template:
-    src: templates/consumer.properties.j2
-    dest: /etc/kafka/consumer.properties
-  notify:
-    - Restart Kafka service
-  tags:
-    - confluent_kafka_config
-    - confluent_kafka_config_consumer
+    - confluent_kafka_config_server_jaas
 
 - name: Template configuration file to /etc/kafka/connect-distributed.properties
   template:
     src: templates/connect-distributed.properties.j2
     dest: /etc/kafka/connect-distributed.properties
+  notify:
+    - Restart Kafka Connect service
   tags:
     - confluent_kafka_config
     - confluent_kafka_config_connect_distributed
@@ -133,7 +135,7 @@
 - name: Template configuration file to /etc/schema-registry/schema-registry.properties
   template:
     src: templates/schema-registry.properties.j2
-    dest: /etc/kafka/schema-registry.properties
+    dest: /etc/schema-registry/schema-registry.properties
   notify:
     - Restart Schema Registry service
   tags:
@@ -154,9 +156,43 @@
   template:
     src: templates/ksql-server.properties.j2
     dest: /etc/ksql/ksql-server.properties
+  notify:
+    - Restart KSQL service
   tags:
     - confluent_kafka_config
     - confluent_kafka_config_ksql
+
+- name: Template configuration file to /etc/kafka/producer.properties
+  template:
+    src: templates/producer.properties.j2
+    dest: /etc/kafka/producer.properties
+  tags:
+    - confluent_kafka_config
+    - confluent_kafka_config_producer
+
+- name: Template configuration file to /etc/kafka/consumer.properties
+  template:
+    src: templates/consumer.properties.j2
+    dest: /etc/kafka/consumer.properties
+  tags:
+    - confluent_kafka_config
+    - confluent_kafka_config_consumer
+
+- name: Template configuration file to /etc/kafka/secure-producer.properties
+  template:
+    src: templates/security/secure-producer.properties.j2
+    dest: /etc/kafka/secure-producer.properties
+  tags:
+    - confluent_kafka_config
+    - confluent_kafka_config_secure_producer
+
+- name: Template configuration file to /etc/kafka/secure-consumer.properties
+  template:
+    src: templates/security/secure-consumer.properties.j2
+    dest: /etc/kafka/secure-consumer.properties
+  tags:
+    - confluent_kafka_config
+    - confluent_kafka_config_secure_consumer
 
 # Update user and group on all files and directories
 - name: Set confluent user and group on directories and files
@@ -181,9 +217,9 @@
     - confluent_directory_permissions
 
 # Systemd is used for CentOS 7 and above distributions
-- name: Copy ZooKeeper systemd service file
-  copy:
-    src: files/zookeeper.service
+- name: Copy ZooKeeper systemd service file to /usr/lib/systemd/system/zookeeper.service
+  template:
+    src: templates/service/zookeeper.service.j2
     dest: /usr/lib/systemd/system/zookeeper.service
   when: ansible_distribution == "CentOS" and ansible_distribution_major_version > '6'
   tags:
@@ -199,9 +235,9 @@
     - confluent_zookeeper_service
 
 # Systemd is used for CentOS 7 and above distributions
-- name: Copy Kafka systemd service file to /usr/lib/systemd/system
-  copy:
-    src: files/kafka.service
+- name: Copy Kafka systemd service file to /usr/lib/systemd/system/kafka.service
+  template:
+    src: templates/service/kafka.service.j2
     dest: /usr/lib/systemd/system/kafka.service
   when: ansible_distribution == "CentOS" and ansible_distribution_major_version > '6'
   tags:
@@ -216,10 +252,36 @@
   tags:
     - confluent_kafka_service
 
+# When using the SASL/SCRAM authentication mechanism the credentials for clients are stored within ZooKeeper.
+# The tasks in the included sasl-scram-creds.yaml file create SCRAM authentication credentials in ZooKeeper for each component.
+# These tasks are run after ZooKeeper and Kafka have started. Kafka needs to be started as this creates the chroot and znodes
+# in ZooKeeper that the credentials are then stored under.
+- name: Create credentials in ZooKeeper if the SASL/SCRAM authentication mechanism is used
+  include: "sasl-scram-creds.yaml"
+  when: confluent_kafka_sasl_enabled and confluent_kafka_sasl_enabled_mechanisms == 'SCRAM-SHA-256'
+
 # Systemd is used for CentOS 7 and above distributions
-- name: Copy Schema Registry systemd service file to /usr/lib/systemd/system
-  copy:
-    src: files/schema-registry.service
+- name: Copy Kafka Connect systemd service file to /usr/lib/systemd/system/kafka-connect.service
+  template:
+    src: templates/service/kafka-connect.service.j2
+    dest: /usr/lib/systemd/system/kafka-connect.service
+  when: ansible_distribution == "CentOS" and ansible_distribution_major_version > '6'
+  tags:
+    - confluent_kafka_connect_service
+
+- name: Install and start the Kafka Connect service
+  systemd:
+    name: kafka-connect.service
+    state: started
+    enabled: yes
+    daemon_reload: yes
+  tags:
+    - confluent_kafka_connect_service
+
+# Systemd is used for CentOS 7 and above distributions
+- name: Copy Schema Registry systemd service file to /usr/lib/systemd/system/schema-registry.service
+  template:
+    src: templates/service/schema-registry.service.j2
     dest: /usr/lib/systemd/system/schema-registry.service
   when: ansible_distribution == "CentOS" and ansible_distribution_major_version > '6'
   tags:
@@ -235,9 +297,9 @@
     - confluent_schema_registry_service
 
 # Systemd is used for CentOS 7 and above distributions
-- name: Copy REST Proxy systemd service file to /usr/lib/systemd/system
-  copy:
-    src: files/kafka-rest.service
+- name: Copy REST Proxy systemd service file to /usr/lib/systemd/system/kafka-rest.service
+  template:
+    src: templates/service/kafka-rest.service.j2
     dest: /usr/lib/systemd/system/kafka-rest.service
   when: ansible_distribution == "CentOS" and ansible_distribution_major_version > '6'
   tags:
@@ -251,3 +313,21 @@
     daemon_reload: yes
   tags:
     - confluent_kafka_rest_service
+
+# Systemd is used for CentOS 7 and above distributions
+- name: Copy KSQL systemd service file to /usr/lib/systemd/system/ksql.service
+  template:
+    src: templates/service/ksql.service.j2
+    dest: /usr/lib/systemd/system/ksql.service
+  when: ansible_distribution == "CentOS" and ansible_distribution_major_version > '6'
+  tags:
+    - confluent_ksql_service
+
+- name: Install and start the KSQL service
+  systemd:
+    name: ksql.service
+    state: started
+    enabled: yes
+    daemon_reload: yes
+  tags:
+    - confluent_ksql_service

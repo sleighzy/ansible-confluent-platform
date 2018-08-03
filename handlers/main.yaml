@@ -4,18 +4,34 @@
   service:
     name: zookeeper.service
     state: restarted
+  become: yes
 
 - name: Restart Kafka service
   service:
     name: kafka.service
     state: restarted
+  become: yes
+
+- name: Restart Kafka Connect service
+  service:
+    name: kafka-connect.service
+    state: restarted
+  become: yes
 
 - name: Restart Schema Registry service
   service:
     name: schema-registry.service
     state: restarted
+  become: yes
 
 - name: Restart REST Proxy service
   service:
     name: kafka-rest.service
     state: restarted
+  become: yes
+
+- name: Restart KSQL service
+  service:
+    name: ksql.service
+    state: restarted
+  become: yes

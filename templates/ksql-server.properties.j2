@@ -1,3 +1,11 @@
-bootstrap.servers={{ confluent_ksql_bootstrap_servers }}
+# {{ ansible_managed }}
+bootstrap.servers={{ confluent_kafka_bootstrap_servers }}
 listeners={{ confluent_ksql_listeners }}
-ksql.server.ui.enabled={{ confluent_ksql_server_ui_enabled }}
+ksql.schema.registry.url={{ confluent_ksql_schema_registry_url }}
+ksql.server.ui.enabled=false
+
+security.protocol={{ confluent_ksql_security_protocol }}
+
+{% if confluent_kafka_ssl_enabled or confluent_kafka_sasl_enabled %}
+{% include "templates/security/ksql-sasl-ssl.properties.j2" %}
+{% endif %}

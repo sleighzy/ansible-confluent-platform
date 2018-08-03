@@ -35,10 +35,18 @@ listeners={{ confluent_schema_registry_listener }}
 # (Note that you cannot mix the two modes; use this mode only on new deployments or by shutting down
 # all instances, switching to the new configuration, and then starting the schema registry
 # instances again.)
-kafkastore.bootstrap.servers={{ confluent_kafka_bootstrap_servers }}
+kafkastore.bootstrap.servers={{ confluent_schema_registry_bootstrap_servers }}
+
+kafkastore.group.id=schema-registry
+ 
+kafkastore.security.protocol={{ confluent_schema_registry_security_protocol }}
+
+{% if confluent_kafka_ssl_enabled or confluent_kafka_sasl_enabled %}
+{% include "templates/security/schema-registry-sasl-ssl.properties.j2" %}
+{% endif %}
 
 # The name of the topic to store schemas in
-kafkastore.topic={{ confluent_schema_registry_kafkastore_topic }}
+kafkastore.topic=_schemas
 
 # If true, API requests that fail will include extra debugging information, including stack traces
 debug = {{ confluent_schema_registry_debug }}

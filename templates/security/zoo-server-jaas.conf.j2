@@ -1,0 +1,41 @@
+
+{% if confluent_zookeeper_sasl_mechanism == 'DIGEST-MD5' %}
+Server {
+  org.apache.zookeeper.server.auth.DigestLoginModule required
+  user_super="adminsecret"
+  user_broker="broker-secret"
+  user_connect="connect-secret"
+  user_restproxy="restproxy-secret"
+  user_schemaregistry="schemaregistry-secret";
+};
+{% elif confluent_zookeeper_sasl_mechanism == 'GSSAPI' %}
+Server {
+  com.sun.security.auth.module.Krb5LoginModule required
+  useKeyTab=true
+  keyTab="/etc/security/keytabs/zookeeper.keytab"
+  storeKey=true
+  useTicketCache=false
+  # principal="zookeeper/{{ hostvars[inventory_hostname]['ec2_private_dns_name'] }}@{{ confluent_kafka_sasl_kerberos_realm }}";
+  principal="zookeeper/{{ hostvars[inventory_hostname] }}@{{ confluent_kafka_sasl_kerberos_realm }}";
+};
+
+QuorumServer {
+  com.sun.security.auth.module.Krb5LoginModule required
+  useKeyTab=true
+  keyTab="/etc/security/keytabs/zookeeper-server.keytab"
+  storeKey=true
+  useTicketCache=false
+  debug=false
+  principal="zookeeper/{{ hostvars[inventory_hostname] }}@{{ confluent_kafka_sasl_kerberos_realm }}";
+};
+ 
+QuorumLearner {
+  com.sun.security.auth.module.Krb5LoginModule required
+  useKeyTab=true
+  keyTab="/etc/security/keytabs/zookeeper-server.keytab"
+  storeKey=true
+  useTicketCache=false
+  debug=false
+  principal="zookeeper/{{ hostvars[inventory_hostname] }}@{{ confluent_kafka_sasl_kerberos_realm }}";
+};
+{% endif %}

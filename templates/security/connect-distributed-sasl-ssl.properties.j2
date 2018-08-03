@@ -1,0 +1,79 @@
+# {{ ansible_managed }}
+
+{% if confluent_kafka_ssl_enabled %}
+{% if confluent_kafka_ssl_client_auth == 'required' %}
+ssl.keystore.location={{ confluent_connect_ssl_keystore_location }}
+ssl.keystore.password={{ confluent_connect_ssl_keystore_password }}
+ssl.key.password={{ confluent_connect_ssl_key_password }}
+producer.ssl.keystore.location={{ confluent_connect_ssl_keystore_location }}
+producer.ssl.keystore.password={{ confluent_connect_ssl_keystore_password }}
+producer.ssl.key.password={{ confluent_connect_ssl_key_password }}
+consumer.ssl.keystore.location={{ confluent_connect_ssl_keystore_location }}
+consumer.ssl.keystore.password={{ confluent_connect_ssl_keystore_password }}
+consumer.ssl.key.password={{ confluent_connect_ssl_key_password }}
+{% endif %}
+ssl.truststore.location={{ confluent_connect_ssl_truststore_location }}
+ssl.truststore.password={{ confluent_connect_ssl_truststore_password }}
+producer.ssl.truststore.location={{ confluent_connect_ssl_truststore_location }}
+producer.ssl.truststore.password={{ confluent_connect_ssl_truststore_password }}
+consumer.ssl.truststore.location={{ confluent_connect_ssl_truststore_location }}
+consumer.ssl.truststore.password={{ confluent_connect_ssl_truststore_password }}
+{% endif %}
+
+{% if confluent_kafka_sasl_enabled %}
+
+{% if confluent_connect_sasl_mechanism == 'SCRAM-SHA-256' %}
+
+# Configure the Connect workers to use SASL/SCRAM
+sasl.mechanism=SCRAM-SHA-256
+sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required \
+  username="{{ confluent_connect_sasl_username }}" \
+  password="{{ confluent_connect_sasl_password }}";
+ 
+# Override default producer (source) configuration that the worker uses
+producer.security.protocol={{ confluent_connect_security_protocol }}
+producer.sasl.mechanism=SCRAM-SHA-256
+producer.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required \
+  username="{{ confluent_connect_sasl_username }}" \
+  password="{{ confluent_connect_sasl_password }}";
+ 
+# Override default consumer (sink) configuration that the worker uses
+consumer.security.protocol={{ confluent_connect_security_protocol }}
+consumer.sasl.mechanism=SCRAM-SHA-256
+consumer.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required \
+  username="{{ confluent_connect_sasl_username }}" \
+  password="{{ confluent_connect_sasl_password }}";
+
+{% elif confluent_connect_sasl_mechanism == 'GSSAPI' %}
+
+# Configure the Connect workers to use GSSAPI
+sasl.mechanism=GSSAPI
+sasl.kerberos.service.name=kafka
+sasl.jaas.config=com.sun.security.auth.module.Krb5LoginModule required \
+  useKeyTab=true \
+  storeKey=true  \
+  keyTab="/etc/security/keytabs/kafka-connect.keytab" \
+  principal="kafka-connect@{{ confluent_kafka_sasl_kerberos_realm }}";
+ 
+# Override default producer (source) configuration that the worker uses
+producer.security.protocol={{ confluent_connect_producer_security_protocol }}
+producer.sasl.mechanism=GSSAPI
+producer.sasl.kerberos.service.name=kafka
+producer.sasl.jaas.config=com.sun.security.auth.module.Krb5LoginModule required \
+  useKeyTab=true \
+  storeKey=true  \
+  keyTab="/etc/security/keytabs/connect-producer.keytab" \
+  principal="connect-producer@{{ confluent_kafka_sasl_kerberos_realm }}";
+
+# Override default consumer (sink) configuration that the worker uses
+consumer.security.protocol={{ confluent_connect_consumer_security_protocol }}
+consumer.sasl.mechanism=GSSAPI
+consumer.sasl.kerberos.service.name=kafka
+consumer.sasl.jaas.config=com.sun.security.auth.module.Krb5LoginModule required \
+  useKeyTab=true \
+  storeKey=true  \
+  keyTab="/etc/security/keytabs/connect-consumer.keytab" \
+  principal="connect-consumer@{{ confluent_kafka_sasl_kerberos_realm }}";
+
+{% endif %}
+{% endif %}

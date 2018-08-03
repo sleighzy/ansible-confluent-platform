@@ -24,6 +24,12 @@
 # A list of host/port pairs to use for establishing the initial connection to the Kafka cluster.
 bootstrap.servers={{ confluent_kafka_bootstrap_servers }}
 
+security.protocol={{ confluent_connect_security_protocol }}
+
+{% if confluent_kafka_ssl_enabled or confluent_kafka_sasl_enabled %}
+{% include "templates/security/connect-distributed-sasl-ssl.properties.j2" %}
+{% endif %}
+
 # unique name for the cluster, used in forming the Connect cluster group. Note that this must not conflict with consumer group IDs
 group.id={{ confluent_connect_group_id }}
 

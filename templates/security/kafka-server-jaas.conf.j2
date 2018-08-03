@@ -1,0 +1,34 @@
+{% if confluent_kafka_sasl_enabled_mechanisms == 'SCRAM-SHA-256' %}
+KafkaServer {
+  org.apache.kafka.common.security.scram.ScramLoginModule required
+  username="{{ confluent_kafka_broker_sasl_username }}"
+  password="{{ confluent_kafka_broker_sasl_password }}";
+};
+{% elif confluent_kafka_sasl_enabled_mechanisms == 'GSSAPI' %}
+KafkaServer {
+  com.sun.security.auth.module.Krb5LoginModule required
+  useKeyTab=true
+  storeKey=true
+  keyTab="/etc/security/keytabs/kafka.keytab"
+  # principal="kafka/{{ hostvars[inventory_hostname]['ec2_private_dns_name'] }}@{{ confluent_kafka_sasl_kerberos_realm }}";
+  principal="kafka/{{ hostvars[inventory_hostname] }}@{{ confluent_kafka_sasl_kerberos_realm }}";
+};
+{% endif %}
+
+{% if confluent_zookeeper_use_sasl_authentication %}
+{% if confluent_zookeeper_sasl_mechanism == 'DIGEST-MD5' %}
+Client {
+  org.apache.zookeeper.server.auth.DigestLoginModule required
+  username="{{ confluent_kafka_broker_sasl_username }}"
+  password="{{ confluent_kafka_broker_sasl_password }}";
+};
+{% elif confluent_zookeeper_sasl_mechanism == 'GSSAPI' %}
+Client {
+  com.sun.security.auth.module.Krb5LoginModule required
+  useKeyTab=true
+  storeKey=true
+  keyTab="/etc/security/keytabs/kafka-zk.keytab"
+  principal="kafka@{{ confluent_kafka_sasl_kerberos_realm }}";
+};
+{% endif %}
+{% endif %}
