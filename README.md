@@ -1,8 +1,8 @@
 # Confluent Platform
 
-Ansible role to install and configure the [Confluent Platform](https://www.confluent.io/) on RHEL / CentOS 6 and 7.
+Ansible role to install and configure [Confluent Platform 5.0](https://www.confluent.io/) on RHEL / CentOS 6 and 7.
 
-[Confluent Platform](https://www.confluent.io/) is a complete distribution of an Apache Kafka streaming platform.
+[Confluent Platform](https://www.confluent.io/) is a complete distribution of an Apache Kafka streaming platform. This distribution ships with Apache Kafka 2.0.
 
 [Apache Kafka](http://kafka.apache.org/) is a message bus using publish-subscribe topics. Other components and products can consume these messages by subscribing to these topics. Kafka is extremely fast, handling megabytes of reads and writes per second from thousands of clients. Messages are persisted and replicated to prevent data loss. Data streams are partitioned and can be elastically scaled with no downtime.
 
@@ -16,7 +16,7 @@ The Confluent Platform includes the below additional components that build upon 
 Platform: RHEL / CentOS 6 and 7
 
 ## Basic Role Variables
-    confluent_platform_version: 4.1
+    confluent_platform_version: 5.0
     confluent_kafka_broker_id: 0
     confluent_kafka_listener_protocol: PLAINTEXT
     confluent_kafka_listener_hostname: localhost

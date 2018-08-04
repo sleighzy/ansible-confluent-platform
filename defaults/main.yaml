@@ -1,4 +1,4 @@
-confluent_platform_version: 4.1
+confluent_platform_version: 5.0
 
 ######### ZooKeeper Properties (/etc/kafka/zookeeper.properties) ########
 
