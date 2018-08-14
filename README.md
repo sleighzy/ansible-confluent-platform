@@ -1,5 +1,7 @@
 # Confluent Platform
 
+[![Build Status](https://travis-ci.org/sleighzy/ansible-confluent-platform.svg?branch=master)](https://travis-ci.org/sleighzy/ansible-confluent-platform)
+
 Ansible role to install and configure [Confluent Platform 5.0](https://www.confluent.io/) on RHEL / CentOS 6 and 7.
 
 [Confluent Platform](https://www.confluent.io/) is a complete distribution of an Apache Kafka streaming platform. This distribution ships with Apache Kafka 2.0.
